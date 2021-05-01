@@ -48,7 +48,7 @@ pub struct HashMapTransactionStore {
 }
 
 impl HashMapTransactionStore {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             data_store: HashMap::new(),
         }

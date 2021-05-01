@@ -31,7 +31,7 @@ pub struct HashMapAccountStore {
 }
 
 impl HashMapAccountStore {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             data_store: HashMap::new(),
         }
