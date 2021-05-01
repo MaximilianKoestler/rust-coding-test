@@ -48,7 +48,7 @@ pub struct Account {
 }
 
 impl Account {
-    fn total(&self) -> Amount {
+    pub fn total(&self) -> Amount {
         self.available + self.held
     }
 }
