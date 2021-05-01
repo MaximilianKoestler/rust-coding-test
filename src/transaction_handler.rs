@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 use crate::types::{
     Account, DisputableTransaction, DisputedTransactionRecord, MonetaryTransactionRecord,
@@ -50,15 +50,32 @@ impl TransactionHandler {
     }
 
     fn handle_dispute(&mut self, record: DisputedTransactionRecord) -> Result<()> {
-        todo!()
+        let transaction_result = self.transaction_store.dispute_transaction(&record);
+
+        transaction_result.and_then(|transaction| {
+            let DisputableTransaction::Deposit(data) = transaction;
+            self.account_store.hold_amount(data.client, data.amount)
+        })
     }
 
     fn handle_resolve(&mut self, record: DisputedTransactionRecord) -> Result<()> {
-        todo!()
+        let transaction_result = self.transaction_store.undispute_transaction(&record, false);
+
+        transaction_result.and_then(|transaction| {
+            let DisputableTransaction::Deposit(data) = transaction;
+            self.account_store
+                .release_held_amount(data.client, data.amount)
+        })
     }
 
     fn handle_chargeback(&mut self, record: DisputedTransactionRecord) -> Result<()> {
-        todo!()
+        let transaction_result = self.transaction_store.undispute_transaction(&record, true);
+
+        transaction_result.and_then(|transaction| {
+            let DisputableTransaction::Deposit(data) = transaction;
+            self.account_store
+                .charge_back_amount(data.client, data.amount)
+        })
     }
 
     /// Handle all given transactions
@@ -134,6 +151,109 @@ mod tests {
                 available: dec!(1.0),
                 held: Amount::ZERO,
                 locked: false,
+            }]
+        );
+    }
+
+    #[test]
+    fn deposit_dispute() {
+        let mut handler = TransactionHandler::new();
+
+        let transactions = vec![
+            Transaction::Deposit(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 0,
+                amount: dec!(2.0),
+            }),
+            Transaction::Deposit(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 1,
+                amount: dec!(3.0),
+            }),
+            Transaction::Dispute(DisputedTransactionRecord {
+                client: 0,
+                transaction: 1,
+            }),
+        ];
+
+        handler.handle_transaction(transactions.into_iter());
+
+        let accounts: Vec<_> = handler.into_iter().collect();
+        assert_eq!(
+            accounts,
+            vec![Account {
+                client: 0,
+                available: dec!(2.0),
+                held: dec!(3.0),
+                locked: false,
+            }]
+        );
+    }
+
+    #[test]
+    fn deposit_dispute_resolve() {
+        let mut handler = TransactionHandler::new();
+
+        let transactions = vec![
+            Transaction::Deposit(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 0,
+                amount: dec!(2.0),
+            }),
+            Transaction::Dispute(DisputedTransactionRecord {
+                client: 0,
+                transaction: 0,
+            }),
+            Transaction::Resolve(DisputedTransactionRecord {
+                client: 0,
+                transaction: 0,
+            }),
+        ];
+
+        handler.handle_transaction(transactions.into_iter());
+
+        let accounts: Vec<_> = handler.into_iter().collect();
+        assert_eq!(
+            accounts,
+            vec![Account {
+                client: 0,
+                available: dec!(2.0),
+                held: Amount::ZERO,
+                locked: false,
+            }]
+        );
+    }
+
+    #[test]
+    fn deposit_dispute_charge_back() {
+        let mut handler = TransactionHandler::new();
+
+        let transactions = vec![
+            Transaction::Deposit(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 0,
+                amount: dec!(2.0),
+            }),
+            Transaction::Dispute(DisputedTransactionRecord {
+                client: 0,
+                transaction: 0,
+            }),
+            Transaction::Chargeback(DisputedTransactionRecord {
+                client: 0,
+                transaction: 0,
+            }),
+        ];
+
+        handler.handle_transaction(transactions.into_iter());
+
+        let accounts: Vec<_> = handler.into_iter().collect();
+        assert_eq!(
+            accounts,
+            vec![Account {
+                client: 0,
+                available: Amount::ZERO,
+                held: Amount::ZERO,
+                locked: true,
             }]
         );
     }
