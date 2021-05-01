@@ -9,4 +9,8 @@ edition = "2018"
 [dependencies]
 anyhow = "1"
 csv = "1"
+rust_decimal = { version = "1.12", features = ["serde-str"] }
 serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+rust_decimal_macros = "1.12"

@@ -53,3 +53,9 @@ completed "chargeback"
 This implementation must focus on readability over performance. However, pipelining I/O and actual
 transaction processing seems to be a very natural optimization and I will try to consider this for
 my attempt at the problem.
+
+### Money Representation
+
+I have decided to go with the `rust_decimal` crate for simplicity since it requires no extra effort
+for serialization/deserialization with `serde`. An easy optimization in RAM and CPU usage would be
+to use a simple fixed point format (i.e. an `i64` representing 1/10,000 of the unit currency).
