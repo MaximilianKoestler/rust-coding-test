@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use csv;
 use serde::Deserialize;
 
 use crate::types::{

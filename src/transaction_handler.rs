@@ -80,15 +80,15 @@ impl TransactionHandler {
 
     /// Handle all given transactions
     /// This method is infallible, all bogus transactions are ignored, errors will be logged.
-    pub fn handle_transaction(&mut self, transactions: impl Iterator<Item = Transaction>) {
+    pub fn handle_transactions(&mut self, transactions: impl Iterator<Item = Result<Transaction>>) {
         for transaction in transactions {
-            let result = match transaction {
+            let result = transaction.and_then(|transaction| match transaction {
                 Transaction::Deposit(record) => self.handle_deposit(record),
                 Transaction::Withdrawal(record) => self.handle_withdrawal(record),
                 Transaction::Dispute(record) => self.handle_dispute(record),
                 Transaction::Resolve(record) => self.handle_resolve(record),
                 Transaction::Chargeback(record) => self.handle_chargeback(record),
-            };
+            });
             let _ = result; // TODO: add logging
         }
     }
@@ -110,7 +110,7 @@ mod tests {
             amount: dec!(2),
         })];
 
-        handler.handle_transaction(transactions.into_iter());
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
 
         let accounts: Vec<_> = handler.into_iter().collect();
         assert_eq!(
@@ -141,7 +141,7 @@ mod tests {
             }),
         ];
 
-        handler.handle_transaction(transactions.into_iter());
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
 
         let accounts: Vec<_> = handler.into_iter().collect();
         assert_eq!(
@@ -176,7 +176,7 @@ mod tests {
             }),
         ];
 
-        handler.handle_transaction(transactions.into_iter());
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
 
         let accounts: Vec<_> = handler.into_iter().collect();
         assert_eq!(
@@ -210,7 +210,7 @@ mod tests {
             }),
         ];
 
-        handler.handle_transaction(transactions.into_iter());
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
 
         let accounts: Vec<_> = handler.into_iter().collect();
         assert_eq!(
@@ -244,7 +244,7 @@ mod tests {
             }),
         ];
 
-        handler.handle_transaction(transactions.into_iter());
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
 
         let accounts: Vec<_> = handler.into_iter().collect();
         assert_eq!(

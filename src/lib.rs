@@ -1,8 +1,9 @@
 #![forbid(unsafe_code)]
 
 mod account_store;
-mod csv_parser;
-mod csv_writer;
-mod transaction_handler;
 mod transaction_store;
-mod types;
+
+pub mod csv_parser;
+pub mod csv_writer;
+pub mod transaction_handler;
+pub mod types;
