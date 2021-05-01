@@ -38,3 +38,35 @@ pub enum Transaction {
 pub enum DisputableTransaction {
     Deposit(MonetaryTransactionRecord),
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Account {
+    pub client: ClientId,
+    pub available: Amount,
+    pub held: Amount,
+    pub locked: bool,
+}
+
+impl Account {
+    fn total(&self) -> Amount {
+        self.available + self.held
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use rust_decimal_macros::dec;
+
+    #[test]
+    fn test_total() {
+        let account = Account {
+            client: 0,
+            available: dec!(1.0),
+            held: dec!(2.0),
+            locked: false,
+        };
+        assert_eq!(account.total(), dec!(3.0));
+    }
+}

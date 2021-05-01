@@ -33,7 +33,7 @@ transactions and 65,536 accounts for the worst-case scenario.
 How this translates to a size in GB depends on the exact representation of the data in memory, so
 this will need to be clarified later.
 
-### Resolve or Chargeback for undisputed transactions
+### Resolve or Chargeback for Undisputed Transactions
 
 The requirements say that the application **can** ignore "resolve" transactions for undisputed
 transactions. I will also extend this to "chargeback" transactions and read this as a **must**.
@@ -45,6 +45,18 @@ While this would make the whole task easier, I feel that this would cause quite 
 an actual banking application.
 I will, under similar reasoning, not allow a second "dispute" for transaction that have already
 completed "chargeback"
+
+### Insufficient Funds for Disputes
+
+If the current available amount of an account is not sufficient to completely satisfy a "Dispute"
+transaction, the maximum possible amount will be held. The same principle will be applied to
+"Resolve" and "Chargeback". If the amount held is smaller than the original transactions
+value, the maximum possible amount will be released or charged back.
+
+### Handling Locked/Frozen Accounts
+
+While not explicitly stated in the requirements, all deposits/withdrawals to locked/frozen accounts
+will be refused.
 
 ## Design Decisions
 

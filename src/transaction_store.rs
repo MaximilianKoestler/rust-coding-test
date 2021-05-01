@@ -42,14 +42,14 @@ struct DisputableTransactionData {
     state: DisputeState,
 }
 
-/// A simple RAM-backed transaction store using a standard Rust HashMap
+/// A simple RAM-backed transaction store using a standard Rust `HashMap`
 pub struct HashMapTransactionStore {
     data_store: HashMap<TransactionId, DisputableTransactionData>,
 }
 
 impl HashMapTransactionStore {
     fn new() -> Self {
-        HashMapTransactionStore {
+        Self {
             data_store: HashMap::new(),
         }
     }
