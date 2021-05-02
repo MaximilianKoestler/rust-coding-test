@@ -13,16 +13,18 @@ To allow rolling back transactions at a later point in time, all past transactio
 retrievable by ID.
 There are multiple possible options to allow this, among them
 
-  1. reading the `.csv` file multiple times to look up transactions by ID,
-  2. storing the `.csv` file in a different format (RAM or disk) to allow faster lookup (e.g. a DB),
-  3. keeping track of all "past" transactions on the fly
+1. reading the `.csv` file multiple times to look up transactions by ID,
+2. storing the `.csv` file in a different format (RAM or disk) to allow faster lookup (e.g. a DB),
+3. keeping track of all "past" transactions on the fly
+
+
     - by storing them in a simple data structure in RAM,
     - or by storing them in a persistent data structure on disk (e.g. a DB).
 
 Due to the scope of this task as a test and due to the fact that the program can run in a single
 pass by design, I don't think that storing data persistently using a DB is required here.
 Looking up transactions in the `.csv` file would be horribly slow, so I will go with the memory
-backed variant of point *3.*.
+backed variant of point _3._.
 
 Similar considerations need to be taken for the account information (`u16` ID, so up to 65,536
 accounts).
@@ -33,13 +35,33 @@ transactions and 65,536 accounts for the worst-case scenario.
 How this translates to a size in GB depends on the exact representation of the data in memory, so
 this will need to be clarified later.
 
+### Only Deposits Can be Disputed
+
+The requirements are unfortunately a bit unclear about what kind of transactions can be disputed.
+Obviously only "deposit" and "withdrawal" are possible candidates, since they are the only
+transactions that have their own transaction ID.
+
+Because a dispute decreases the available amount, it intuitively only makes sense to dispute
+deposits, since they would be essentially get reverted by a "dispute" followed by a "chargeback".
+Disputing a withdrawal would, on the contrary, double the effect of a transaction which does not
+seem desired.
+
+However, there is a mathematically correct solution for this. Disputing a "withdrawal" would use
+calculations with **negative** amounts, effectively increasing the amount of available funds and
+potentially decreasing the held amounts to below 0.
+That would be equivalent to the bank loaning money to their client during the dispute period to make
+up for potentially fraudulent withdrawals by a third party.
+In some ways, this even makes sense from a business perspective, but since negative amounts and
+especially negative balances are not mentioned anywhere in the requirements, I have decided that
+only "deposit" transactions can be disputed.
+
 ### Resolve or Chargeback for Undisputed Transactions
 
 The requirements say that the application **can** ignore "resolve" transactions for undisputed
 transactions. I will also extend this to "chargeback" transactions and read this as a **must**.
 
 If this was truly to be meant to be undefined behavior, an obvious optimization would be to not
-track *any* information about the "dispute" state which would mean that the whole transaction
+track _any_ information about the "dispute" state which would mean that the whole transaction
 data structure could be immutable.
 While this would make the whole task easier, I feel that this would cause quite a lot of trouble in
 an actual banking application.
