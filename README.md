@@ -17,9 +17,8 @@ There are multiple possible options to allow this, among them
 2. storing the `.csv` file in a different format (RAM or disk) to allow faster lookup (e.g. a DB),
 3. keeping track of all "past" transactions on the fly
 
-
-    - by storing them in a simple data structure in RAM,
-    - or by storing them in a persistent data structure on disk (e.g. a DB).
+   - by storing them in a simple data structure in RAM,
+   - or by storing them in a persistent data structure on disk (e.g. a DB).
 
 Due to the scope of this task as a test and due to the fact that the program can run in a single
 pass by design, I don't think that storing data persistently using a DB is required here.
@@ -32,8 +31,6 @@ My solution will also store the account information directly in RAM.
 
 In total, this design decision requires the host system to provide enough RAM for 4,294,967,296
 transactions and 65,536 accounts for the worst-case scenario.
-How this translates to a size in GB depends on the exact representation of the data in memory, so
-this will need to be clarified later.
 
 ### Only Deposits Can be Disputed
 
@@ -68,6 +65,16 @@ an actual banking application.
 I will, under similar reasoning, not allow a second "dispute" for transaction that have already
 completed "chargeback"
 
+### Client ID Mismatch
+
+Transactions of the kind "dispute", "resolve", and "chargeback" will be ignored if the client ID
+does not match the client ID of the referenced transaction.
+
+### Client Creation
+
+Invalid transactions will not lead to the creation of client account data. That means in practice
+that a client account will only be created if there is a deposit with this client ID.
+
 ### Insufficient Funds for Disputes
 
 If the current available amount of an account is not sufficient to completely satisfy a "Dispute"
@@ -82,14 +89,19 @@ will be refused.
 
 ## Design Decisions
 
-### Parallelism
+### Performance
 
-This implementation must focus on readability over performance. However, pipelining I/O and actual
-transaction processing seems to be a very natural optimization and I will try to consider this for
-my attempt at the problem.
+This implementation must focus on readability over performance. I have designed all modules to
+accept iterators to avoid loading the whole input/output text at once.
+
+A logical optimization step would be to pipeline I/O and actual transaction processing.
+Having interfaces that already work on iterators will help with that.
 
 ### Money Representation
 
 I have decided to go with the `rust_decimal` crate for simplicity since it requires no extra effort
 for serialization/deserialization with `serde`. An easy optimization in RAM and CPU usage would be
 to use a simple fixed point format (i.e. an `i64` representing 1/10,000 of the unit currency).
+
+This crate is also one of the few causes of possible `panic!()` in the implementation. Attempting
+to parse too large numbers will result in an integer overflow!
