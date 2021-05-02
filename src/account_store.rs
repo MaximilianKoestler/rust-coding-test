@@ -38,6 +38,12 @@ impl HashMapAccountStore {
     }
 }
 
+impl Default for HashMapAccountStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> IntoIterator for &'a mut HashMapAccountStore {
     type Item = Account;
 

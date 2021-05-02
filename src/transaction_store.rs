@@ -60,6 +60,12 @@ impl HashMapTransactionStore {
     }
 }
 
+impl Default for HashMapTransactionStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TransactionStore for HashMapTransactionStore {
     fn add_transaction(&mut self, transaction: DisputableTransaction) -> Result<()> {
         match transaction {
