@@ -6,15 +6,19 @@ use crate::types::{Account, Amount, ClientId};
 /// Store account information to settle transactions
 pub trait AccountStore {
     /// Process a balance change, positive amounts mean deposits, negative mean withdrawals
+    /// Calls to this functions will fail for locked accounts.
     fn add_to_balance(&mut self, client: ClientId, amount: Amount) -> Result<()>;
 
     /// Hold the given (positive) amount due to a dispute (resolved by later transactions)
+    /// This function still works for locked accounts.
     fn hold_amount(&mut self, client: ClientId, amount: Amount) -> Result<()>;
 
     /// Release the given (positive) amount into the available funds
+    /// This function still works for locked accounts.
     fn release_held_amount(&mut self, client: ClientId, amount: Amount) -> Result<()>;
 
     /// Withdraw the given (positive) amount from the held funds and lock the account
+    /// This function still works for locked accounts.
     fn charge_back_amount(&mut self, client: ClientId, amount: Amount) -> Result<()>;
 }
 
@@ -322,5 +326,21 @@ mod tests {
                 locked: true,
             }]
         );
+    }
+
+    #[test]
+    fn try_modifying_locked_balance() {
+        let mut store = HashMapAccountStore::new();
+
+        store.add_to_balance(0, dec!(2.0)).unwrap();
+        store.hold_amount(0, dec!(1.0)).unwrap();
+        store.charge_back_amount(0, dec!(5.0)).unwrap();
+
+        // locked accounts can still increase the held amount
+        store.hold_amount(0, dec!(1.0)).unwrap();
+
+        // locked accounts cannot have balance changes
+        store.add_to_balance(0, dec!(2.0)).unwrap_err();
+        store.add_to_balance(0, dec!(-2.0)).unwrap_err();
     }
 }

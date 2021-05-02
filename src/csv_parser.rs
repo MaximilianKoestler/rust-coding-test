@@ -19,7 +19,7 @@ enum RawTransactionType {
 
 /// A single row of the input CSV, the amount is missing for certain transaction types
 #[derive(Debug, Deserialize)]
-pub struct RawTransaction {
+struct RawTransaction {
     #[serde(rename = "type")]
     transaction_type: RawTransactionType,
 

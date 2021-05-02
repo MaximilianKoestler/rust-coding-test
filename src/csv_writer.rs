@@ -3,6 +3,7 @@ use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 use crate::types::Account;
 
+/// Use a custom serializer to compute the "total" balance on the fly
 impl Serialize for Account {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

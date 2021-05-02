@@ -78,6 +78,11 @@ an actual banking application.
 I will, under similar reasoning, not allow a second "dispute" for transaction that have already
 completed "chargeback"
 
+In total, this means that only the transactions depicted in the following image will successfully
+change the state of a transaction in the `TransactionStore`.
+
+![Transaction Store Overview](doc/transaction_store.png)
+
 ### Client ID Mismatch
 
 Transactions of the kind "dispute", "resolve", and "chargeback" will be ignored if the client ID
@@ -106,8 +111,8 @@ will be refused.
 
 This implementation must focus on readability over performance. I have designed all modules to
 accept iterators to avoid loading the whole input/output text at once.
-
-A logical optimization step would be to pipeline I/O and actual transaction processing.
+A logical optimization step could be to pipeline I/O and actual transaction processing if the
+current performance does not prove sufficient.
 Having interfaces that already work on iterators will help with that.
 
 Before starting any optimization at all, I would create a benchmark suite (usable through
@@ -126,9 +131,19 @@ to use a simple fixed point format (i.e. an `i64` representing 1/10,000 of the u
 This crate is also one of the few possible causes of `panic!()` in the implementation. Attempting
 to parse too large numbers will result in an integer overflow!
 
+### Correctness & Robustness
+
+I use Rust's type system wherever possible to ensure that failures cannot happen by design. As an
+example, I eliminate the `Option<Amount>` from the data structures within the parser, so that the
+type used itself clearly communicates whether a transaction has an amount or not.
+
+I do not use any source of `panic()!` in my own code (apart from `unwrap()` and `unwrap_err()` in
+unit tests).
+A possible source of panic is, as listed above, the `rust_decimal` crate.
+
 ### Testing
 
-All modules have been developed against unit tests.
+All modules have been developed against unit tests which are part of the module files.
 I also have run the final version against a separate integration test suite that is not fully
 automated. This test suite is not part of this repository because it relies on third-party data and
 code.

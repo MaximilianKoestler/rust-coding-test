@@ -50,7 +50,8 @@ impl TransactionHandler {
     }
 
     /// Handle a single "withdrawal" transaction
-    /// The client's available funds will go down if sufficient for the transaction
+    /// The client's available funds will go down if they have been sufficient for the transaction,
+    /// otherwise the transaction will be ignored.
     fn handle_withdrawal(&mut self, record: MonetaryTransactionRecord) -> Result<()> {
         self.account_store
             .add_to_balance(record.client, -record.amount)

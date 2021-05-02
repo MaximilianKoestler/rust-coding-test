@@ -8,6 +8,8 @@ use rust_coding_test::{
     transaction_handler::TransactionHandler,
 };
 
+/// Read records in CSV format from the `source`, process all transactions and write the account
+/// data to `destination` (also in CSV format)
 fn process_transactions(
     source: impl std::io::Read,
     destination: &mut dyn std::io::Write,
