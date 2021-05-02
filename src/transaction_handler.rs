@@ -93,7 +93,9 @@ impl TransactionHandler {
                 Transaction::Resolve(record) => self.handle_resolve(record),
                 Transaction::Chargeback(record) => self.handle_chargeback(record),
             });
-            let _ = result; // TODO: add logging
+            if let Err(error) = result {
+                warn!("{}", error);
+            }
         }
     }
 }
