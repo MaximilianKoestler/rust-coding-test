@@ -37,18 +37,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn example_from_requirements() {
-        // Note: This test makes assumption about exact output format and order and is therefore
-        //       very brittle.
+    fn modified_example_from_requirements() {
+        // Note: This test makes assumption about exact output format and is therefore very brittle.
         //       Its purpose is primarily to detect changes in the overall output format.
 
         let source = br#"
 type, client, tx, amount
 deposit, 1, 1, 1.0
-deposit, 2, 2, 2.0
 deposit, 1, 3, 2.0
 withdrawal, 1, 4, 1.5
-withdrawal, 2, 5, 3.0
 "#;
         let mut destination = vec![];
 
@@ -59,7 +56,6 @@ withdrawal, 2, 5, 3.0
             &result,
             r#"client,available,held,total,locked
 1,1.5,0,1.5,false
-2,2.0,0,2.0,false
 "#
         );
     }
