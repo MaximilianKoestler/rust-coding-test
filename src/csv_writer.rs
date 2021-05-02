@@ -1,5 +1,4 @@
 use anyhow::Result;
-use csv;
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 use crate::types::Account;
