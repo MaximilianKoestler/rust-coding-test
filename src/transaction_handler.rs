@@ -156,6 +156,37 @@ mod tests {
     }
 
     #[test]
+    fn deposit_then_withdraw_more_than_available() {
+        let mut handler = TransactionHandler::new();
+
+        let transactions = vec![
+            Transaction::Deposit(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 0,
+                amount: dec!(2.0),
+            }),
+            Transaction::Withdrawal(MonetaryTransactionRecord {
+                client: 0,
+                transaction: 0,
+                amount: dec!(3.0),
+            }),
+        ];
+
+        handler.handle_transactions(transactions.into_iter().map(|t| Ok(t)));
+
+        let accounts: Vec<_> = handler.into_iter().collect();
+        assert_eq!(
+            accounts,
+            vec![Account {
+                client: 0,
+                available: dec!(2.0),
+                held: Amount::ZERO,
+                locked: false,
+            }]
+        );
+    }
+
+    #[test]
     fn deposit_dispute() {
         let mut handler = TransactionHandler::new();
 
