@@ -3,6 +3,19 @@
 This is a simple transaction processing engine.
 It takes a list of records from a `.csv` file and produces `.csv` formatted results on stdout.
 
+## Usage
+
+```
+$ cargo run -- input.csv > output.csv
+```
+
+Since the [pretty-env-logger](https://crates.io/crates/pretty_env_logger) crate is used for logging,
+you can use environment variables to change the log level:
+
+```
+$ RUST_LOG=warn cargo run ...
+```
+
 ## Assumptions
 
 ### Available RAM
@@ -97,11 +110,37 @@ accept iterators to avoid loading the whole input/output text at once.
 A logical optimization step would be to pipeline I/O and actual transaction processing.
 Having interfaces that already work on iterators will help with that.
 
+Before starting any optimization at all, I would create a benchmark suite (usable through
+`cargo bench`) and profile e.g. using [flamegraph](https://github.com/flamegraph-rs/flamegraph) for
+evaluation.
+
+The largest input file I tested contained 2^26 "deposit" transactions split over 2^16 clients
+(about 1.8 GB of `.csv` data) which took around 110 seconds to process on my machine.
+
 ### Money Representation
 
 I have decided to go with the `rust_decimal` crate for simplicity since it requires no extra effort
 for serialization/deserialization with `serde`. An easy optimization in RAM and CPU usage would be
 to use a simple fixed point format (i.e. an `i64` representing 1/10,000 of the unit currency).
 
-This crate is also one of the few causes of possible `panic!()` in the implementation. Attempting
+This crate is also one of the few possible causes of `panic!()` in the implementation. Attempting
 to parse too large numbers will result in an integer overflow!
+
+### Testing
+
+All modules have been developed against unit tests.
+I also have run the final version against a separate integration test suite that is not fully
+automated. This test suite is not part of this repository because it relies on third-party data and
+code.
+
+Something that I considered, but did not do to keep the project smaller and the dependency list
+short is adding property based testing using the [proptest](https://crates.io/crates/proptest).
+A good application would be e.g. to check that regardless of the input, the available, held, and
+total balance of an account must remain positive.
+
+## Input Validation
+
+All IDs must be in their allowed range (`u32`/`u16`) and all transaction amounts must be positive.
+Violation will not lead to a crash but it will cause undefined results.
+Checking and filtering for valid inputs using these criteria is definitely something to consider
+for further improvements.

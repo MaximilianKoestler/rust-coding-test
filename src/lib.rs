@@ -1,6 +1,10 @@
+//! This is a simple transaction processing engine
+//! Look at README.md in the repository for further details.
+
 #![forbid(unsafe_code)]
 
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
 mod account_store;
 mod transaction_store;

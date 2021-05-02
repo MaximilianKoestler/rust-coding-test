@@ -39,6 +39,7 @@ pub enum DisputableTransaction {
     Deposit(MonetaryTransactionRecord),
 }
 
+/// Represents the current funds (available and held) of a client
 #[derive(Debug, Clone, PartialEq)]
 pub struct Account {
     pub client: ClientId,
@@ -48,6 +49,7 @@ pub struct Account {
 }
 
 impl Account {
+    /// Compute the total funds of the client (available and held)
     pub fn total(&self) -> Amount {
         self.available + self.held
     }

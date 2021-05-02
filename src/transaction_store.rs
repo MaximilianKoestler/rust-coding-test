@@ -6,8 +6,12 @@ use crate::types::{
     TransactionId,
 };
 
+/// Select how a disputed transaction should be handled
 pub enum UndisputeOutcome {
+    /// After resolving the transaction will be exactly as before the dispute
     Resolve,
+
+    /// The transaction will be completely undone and locked. It cannot be disputed again.
     Chargeback,
 }
 

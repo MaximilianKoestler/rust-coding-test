@@ -33,22 +33,33 @@ impl TransactionHandler {
         }
     }
 
+    /// Handle a single "deposit" transaction
+    /// The client's available funds will go up and the transaction will be stored for later use
     fn handle_deposit(&mut self, record: MonetaryTransactionRecord) -> Result<()> {
         let transaction_result = self
             .transaction_store
             .add_transaction(DisputableTransaction::Deposit(record.clone()));
 
+        // Note: We do not need to propagate information to the `transaction_store` back about
+        //       whether the `account_store` accepts the balance change.
+        //       If flagging the transaction in this case was required, the code would go here.
         transaction_result.and_then(|_| {
             self.account_store
                 .add_to_balance(record.client, record.amount)
         })
     }
 
+    /// Handle a single "withdrawal" transaction
+    /// The client's available funds will go down if sufficient for the transaction
     fn handle_withdrawal(&mut self, record: MonetaryTransactionRecord) -> Result<()> {
         self.account_store
             .add_to_balance(record.client, -record.amount)
     }
 
+    /// Handle a single "dispute" transaction
+    /// If the disputed transaction exists, and belongs to the client, the amount from the
+    /// transaction is held back for further handling.
+    /// As only "deposit" transactions are stored, only those can be disputed successfully.
     fn handle_dispute(&mut self, record: DisputedTransactionRecord) -> Result<()> {
         let transaction_result = self.transaction_store.dispute_transaction(&record);
 
@@ -58,6 +69,9 @@ impl TransactionHandler {
         })
     }
 
+    /// Handle a single "resolve" transaction
+    /// If the referenced transaction exists, belongs to the client, and was disputed, the held back
+    /// amount from the transaction is released into the client's available funds.
     fn handle_resolve(&mut self, record: DisputedTransactionRecord) -> Result<()> {
         let transaction_result = self
             .transaction_store
@@ -70,11 +84,15 @@ impl TransactionHandler {
         })
     }
 
+    /// Handle a single "chargeback" transaction
+    /// If the referenced transaction exists, belongs to the client, and was disputed, the held back
+    /// amount from the transaction removed from the client's account and the account is frozen.
     fn handle_chargeback(&mut self, record: DisputedTransactionRecord) -> Result<()> {
         let transaction_result = self
             .transaction_store
             .undispute_transaction(&record, UndisputeOutcome::Chargeback);
 
+        // The following call includes the "freeze"
         transaction_result.and_then(|transaction| {
             let DisputableTransaction::Deposit(data) = transaction;
             self.account_store
