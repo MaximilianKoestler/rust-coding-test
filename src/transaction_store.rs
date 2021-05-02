@@ -6,6 +6,11 @@ use crate::types::{
     TransactionId,
 };
 
+pub enum UndisputeOutcome {
+    Resolve,
+    Chargeback,
+}
+
 /// Store transactions for later possibility to dispute
 pub trait TransactionStore {
     /// Add a transaction to the store
@@ -24,7 +29,7 @@ pub trait TransactionStore {
     fn undispute_transaction(
         &mut self,
         transaction: &DisputedTransactionRecord,
-        chargeback: bool,
+        outcome: UndisputeOutcome,
     ) -> Result<DisputableTransaction>;
 }
 
@@ -116,7 +121,7 @@ impl TransactionStore for HashMapTransactionStore {
     fn undispute_transaction(
         &mut self,
         transaction: &DisputedTransactionRecord,
-        chargeback: bool,
+        outcome: UndisputeOutcome,
     ) -> Result<DisputableTransaction> {
         if let Some(data) = self.data_store.get_mut(&transaction.transaction) {
             if data.client != transaction.client {
@@ -133,10 +138,9 @@ impl TransactionStore for HashMapTransactionStore {
                 ));
             }
 
-            if chargeback {
-                data.state = DisputeState::ChargebackOcurred;
-            } else {
-                data.state = DisputeState::NotDisputed;
+            match outcome {
+                UndisputeOutcome::Resolve => data.state = DisputeState::NotDisputed,
+                UndisputeOutcome::Chargeback => data.state = DisputeState::ChargebackOcurred,
             }
 
             Ok(DisputableTransaction::Deposit(MonetaryTransactionRecord {
@@ -179,8 +183,9 @@ mod tests {
         let DisputableTransaction::Deposit(record) = store.dispute_transaction(&dispute).unwrap();
         assert_eq!(record.amount, dec!(1.0));
 
-        let DisputableTransaction::Deposit(record) =
-            store.undispute_transaction(&dispute, false).unwrap();
+        let DisputableTransaction::Deposit(record) = store
+            .undispute_transaction(&dispute, UndisputeOutcome::Resolve)
+            .unwrap();
         assert_eq!(record.amount, dec!(1.0));
 
         // after resolve, the transaction can be disputed again
@@ -205,8 +210,9 @@ mod tests {
         let DisputableTransaction::Deposit(record) = store.dispute_transaction(&dispute).unwrap();
         assert_eq!(record.amount, dec!(1.0));
 
-        let DisputableTransaction::Deposit(record) =
-            store.undispute_transaction(&dispute, true).unwrap();
+        let DisputableTransaction::Deposit(record) = store
+            .undispute_transaction(&dispute, UndisputeOutcome::Chargeback)
+            .unwrap();
         assert_eq!(record.amount, dec!(1.0));
 
         // after chargeback, the transaction cannot be disputed again
@@ -245,7 +251,9 @@ mod tests {
             client: 0,
             transaction: 0,
         };
-        store.undispute_transaction(&dispute, true).unwrap_err();
+        store
+            .undispute_transaction(&dispute, UndisputeOutcome::Resolve)
+            .unwrap_err();
     }
 
     #[test]
@@ -263,6 +271,8 @@ mod tests {
             client: 0,
             transaction: 0,
         };
-        store.undispute_transaction(&dispute, true).unwrap_err();
+        store
+            .undispute_transaction(&dispute, UndisputeOutcome::Resolve)
+            .unwrap_err();
     }
 }

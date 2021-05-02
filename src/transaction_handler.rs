@@ -6,7 +6,7 @@ use crate::types::{
 };
 use crate::{
     account_store::{AccountStore, HashMapAccountStore},
-    transaction_store::{HashMapTransactionStore, TransactionStore},
+    transaction_store::{HashMapTransactionStore, TransactionStore, UndisputeOutcome},
 };
 
 /// Can process a series of transactions while keeping track of the system's state
@@ -59,7 +59,9 @@ impl TransactionHandler {
     }
 
     fn handle_resolve(&mut self, record: DisputedTransactionRecord) -> Result<()> {
-        let transaction_result = self.transaction_store.undispute_transaction(&record, false);
+        let transaction_result = self
+            .transaction_store
+            .undispute_transaction(&record, UndisputeOutcome::Resolve);
 
         transaction_result.and_then(|transaction| {
             let DisputableTransaction::Deposit(data) = transaction;
@@ -69,7 +71,9 @@ impl TransactionHandler {
     }
 
     fn handle_chargeback(&mut self, record: DisputedTransactionRecord) -> Result<()> {
-        let transaction_result = self.transaction_store.undispute_transaction(&record, true);
+        let transaction_result = self
+            .transaction_store
+            .undispute_transaction(&record, UndisputeOutcome::Chargeback);
 
         transaction_result.and_then(|transaction| {
             let DisputableTransaction::Deposit(data) = transaction;
