@@ -87,6 +87,7 @@ fn raw_to_transaction(raw: RawTransaction) -> Result<Transaction> {
 pub fn iter_transactions(reader: impl std::io::Read) -> impl Iterator<Item = Result<Transaction>> {
     csv::ReaderBuilder::new()
         .trim(csv::Trim::All)
+        .flexible(true)
         .from_reader(reader)
         .into_deserialize()
         .map(|raw| raw.map_err(Into::into).and_then(raw_to_transaction))
@@ -118,6 +119,22 @@ deposit, 0, 1, 2
                 client: 0,
                 transaction: 1,
                 amount: dec!(2)
+            })]
+        );
+    }
+
+    #[test]
+    fn missing_last_field() {
+        let buffer = br#"
+type, client, tx, amount
+dispute, 0, 1
+"#;
+        let entries: Vec<_> = iter_transactions(&buffer[..]).map(|r| r.unwrap()).collect();
+        assert_eq!(
+            entries,
+            vec![Transaction::Dispute(DisputedTransactionRecord {
+                client: 0,
+                transaction: 1,
             })]
         );
     }
